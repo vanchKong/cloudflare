@@ -55,7 +55,7 @@ init_setup() {
         )
 
         for url in "${mirrors[@]}"; do
-            if wget -q --timeout=20 -O "${CF_DIR}/$filename" "$url"; then
+            if wget --show-progress --timeout=20 -O "${CF_DIR}/$filename" "$url"; then
                 tar -zxf "${CF_DIR}/$filename" -C "$CF_DIR" && chmod +x "$CF_BIN"
                 rm "${CF_DIR}/$filename"
                 return 0
