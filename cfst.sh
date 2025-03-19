@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Cloudflare IP 优选管理脚本 (无标记版)
-# 更新：通过配置文件管理域名，hosts文件不再使用标记行
-# 使用方法保持不变
+# 更新：支持批量添加/删除域名（空格/逗号分隔）
+# 使用方法：保持与之前一致，参数可传入多个域名
 
 # 配置参数
 CF_DIR="/opt/CloudflareST"
 CF_BIN="${CF_DIR}/CloudflareST"
 CONFIG_FILE="${CF_DIR}/cfst_domains.conf"
-INITIAL_DOMAINS=("ubits.club", "t.ubits.club" "zmpt.cc")  # 初始域名组
+INITIAL_DOMAINS=("ubits.club" "t.ubits.club" "zmpt.cc")  # 修正初始域名组
 
 # 架构检测
 setup_arch() {
@@ -31,9 +31,9 @@ init_setup() {
         
         # 写入初始 hosts 记录（仅首次）
         current_ip="1.1.1.1"
-        while read -r domain_group; do
-            if ! grep -q "^${current_ip} ${domain_group}$" /etc/hosts; then
-                echo "${current_ip} ${domain_group}" >> /etc/hosts
+        while read -r domain; do
+            if ! grep -q "^${current_ip} ${domain}$" /etc/hosts; then
+                echo "${current_ip} ${domain}" >> /etc/hosts
             fi
         done < "$CONFIG_FILE"
         echo "✅ 已初始化 hosts 文件"
@@ -51,7 +51,6 @@ init_setup() {
             "https://ghfast.top/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
             "https://ghproxy.net/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
             "https://gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-
         )
 
         for url in "${mirrors[@]}"; do
@@ -80,12 +79,12 @@ validate_domain() {
     fi
 }
 
-# 添加域名管理
-add_domain() {
+# 添加单个域名
+add_single_domain() {
     local domain=$1
     # 检测格式并去重
     if grep -q "^${domain}$" "$CONFIG_FILE"; then
-        echo "⚠️ 域名已存在" 
+        echo "⚠️ 域名已存在: $domain" 
         return
     fi
     
@@ -98,13 +97,12 @@ add_domain() {
         echo "$current_ip $domain" >> /etc/hosts
         echo "✅ 已添加域名: $domain"
     else
-        echo "添加中止" 
-        exit 1
+        echo "❌ 跳过无效域名: $domain" 
     fi
 }
 
-# 删除域名
-del_domain() {
+# 删除单个域名
+del_single_domain() {
     local domain=$1
     # 从配置文件中删除
     sed -i "/^${domain}$/d" "$CONFIG_FILE"
@@ -118,7 +116,7 @@ get_current_ip() {
     if [ -f "${CF_DIR}/result.csv" ]; then
         awk -F ',' 'NR==2 {print $1}' "${CF_DIR}/result.csv"
     else
-        grep " ${INITIAL_DOMAINS[0]%% *}" /etc/hosts | awk '{print $1}'
+        grep " ${INITIAL_DOMAINS[0]}" /etc/hosts | awk '{print $1}'
     fi
 }
 
@@ -126,18 +124,17 @@ get_current_ip() {
 run_update() {
     echo "⏳ 开始优选测试..."
     cd "$CF_DIR" && ./CloudflareST -dn 15 -tl 400 -sl 1
-    # cd "$CF_DIR" && ./CloudflareST -dn 15 -tl 200 -sl 5
     
     local best_ip=$(get_current_ip)
     [ -z "$best_ip" ] && echo "❌ 优选失败" && exit 1
     
     echo "🔄 正在更新 hosts 文件..."
     # 遍历配置文件更新所有域名
-    while read -r domain_group; do
+    while read -r domain; do
         # 删除旧记录
-        sed -i "/ ${domain_group}$/d" /etc/hosts
+        sed -i "/ ${domain}$/d" /etc/hosts
         # 添加新记录
-        echo "$best_ip $domain_group" >> /etc/hosts
+        echo "$best_ip $domain" >> /etc/hosts
     done < "$CONFIG_FILE"
     
     echo "✅ 所有域名已更新到最新IP: $best_ip"
@@ -146,7 +143,7 @@ run_update() {
 # 查看托管列表
 list_domains() {
     echo "当前托管的域名列表："
-    cat "$CONFIG_FILE" | tr ' ' '\n' | sort -u
+    cat "$CONFIG_FILE" | sort -u
 }
 
 # 主流程
@@ -156,12 +153,20 @@ main() {
 
     case $1 in
         "-add")
-            [ -z "$2" ] && echo "需要域名参数" && exit 1
-            add_domain "$2"
+            shift
+            [ $# -eq 0 ] && echo "需要域名参数" && exit 1
+            domains=$(echo "$@" | tr ',' ' ')
+            for domain in $domains; do
+                add_single_domain "$domain"
+            done
             ;;
         "-del")
-            [ -z "$2" ] && echo "需要域名参数" && exit 1
-            del_domain "$2"
+            shift
+            [ $# -eq 0 ] && echo "需要域名参数" && exit 1
+            domains=$(echo "$@" | tr ',' ' ')
+            for domain in $domains; do
+                del_single_domain "$domain"
+            done
             ;;
         "-list")
             list_domains
