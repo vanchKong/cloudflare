@@ -8,7 +8,7 @@
 CF_DIR="/opt/CloudflareST"
 CF_BIN="${CF_DIR}/CloudflareST"
 CONFIG_FILE="${CF_DIR}/cfst_domains.conf"
-INITIAL_DOMAINS=("ubits.club t.ubits.club" "zmpt.cc")  # 初始域名组
+INITIAL_DOMAINS=("ubits.club", "t.ubits.club" "zmpt.cc")  # 初始域名组
 
 # 架构检测
 setup_arch() {
