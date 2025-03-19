@@ -11,7 +11,7 @@
 ## 大更新！真正的自动化
 下载 cfst.sh 到任意目录，如果命令行下载不了，请到浏览器打开这个链接下载源文件，手动传到你的设备上
 
-`wget https://github.com/vanchKong/cloudflare/blob/main/cfst.sh`
+`wget https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh`
 
 直接运行 `bash cfst.sh` 即可，脚本默认有 `UB` 和 `ZM`
 
