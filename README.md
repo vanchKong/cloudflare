@@ -25,7 +25,7 @@
 
 后续增加站点，或者任意网站，跑下面的命令，该命令会自动检测网站是否托管在CF下，是的情况下会自动添加记录到hosts
 
-`bash cfst.sh -add example.com`，同时也支持 `bash cfst.sh -add example1.com example2.com` 或 `bash cfst.sh -add example1.com,example2.com`
+`bash cfst.sh -add example.com`，同时也支持 `bash cfst.sh -add example1.com example2.com` 或 `bash cfst.sh -add example1.com,example2.com`，删除同理
 
 另外，还有移除优选域名命令： `bash cfst.sh -del example.com`，展示当前优选列表命令：`bash cfst.sh -list`
 
