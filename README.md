@@ -8,7 +8,7 @@
 #### 我尽量写得详细一些，用到的命令会标出来
 
 ## 大更新！真正的自动化
-下载 cfst.sh 到任意目录
+下载 cfst.sh 到任意目录，如果命令行下载不了，请到浏览器打开这个链接下载源文件，手动传到你的设备上
 
 `wget https://github.com/vanchKong/cloudflare/blob/main/cfst.sh`
 
