@@ -7,6 +7,23 @@
 #### arm架构的设备可以去直接替换掉下面教程中的 amd 的文件名，解压的时候注意也替换一下文件名
 #### 我尽量写得详细一些，用到的命令会标出来
 
+## 大更新！真正的自动化
+下载 cfst.sh 到任意目录
+
+`wget https://github.com/vanchKong/cloudflare/blob/main/cfst.sh`
+
+直接运行 `bash cfst.sh` 即可，脚本默认有 `UB` 和 `ZM`
+
+后续增加站点，或者任意网站，跑下面的命令，该命令会自动检测网站是否托管在CF下，是的情况下会自动添加记录到hosts
+
+`bash cfst.sh -add example.com`
+
+另外，还有移除优选域名命令： `bash cfst.sh -del example.com`，展示当前优选列表命令：`bash cfst.sh -list`
+
+
+--- 
+以下是旧版教程，依然适用，上面的脚本也是在做差不多同样的事情
+
 - ### 安装 CloudflareST
 > 一般我会把它装在 /opt 目录下，当然，如果你知道自己在做什么，你可以按照自己的习惯来，OK，首先切换到 opt 目录、创建文件夹
 > 
