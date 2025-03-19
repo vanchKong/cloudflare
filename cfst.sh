@@ -48,6 +48,10 @@ init_setup() {
         mirrors=(
             "https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
             "https://ghproxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://ghfast.top/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://ghproxy.net/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+
         )
 
         for url in "${mirrors[@]}"; do
@@ -121,7 +125,8 @@ get_current_ip() {
 # 执行优选并更新所有域名
 run_update() {
     echo "⏳ 开始优选测试..."
-    cd "$CF_DIR" && ./CloudflareST -dn 15 -tl 200 -sl 5
+    cd "$CF_DIR" && ./CloudflareST -dn 15 -tl 400 -sl 1
+    # cd "$CF_DIR" && ./CloudflareST -dn 15 -tl 200 -sl 5
     
     local best_ip=$(get_current_ip)
     [ -z "$best_ip" ] && echo "❌ 优选失败" && exit 1
