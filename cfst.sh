@@ -22,6 +22,7 @@ setup_arch() {
 # 初始化环境
 init_setup() {
     echo "作者：端端🐱/Gotchaaa，玩得开心～"
+    echo "使用姿势请查阅：https://github.com/vanchKong/cloudflare"
     [ ! -d "$CF_DIR" ] && mkdir -p "$CF_DIR"
     
     # 首次创建配置文件时初始化 hosts
