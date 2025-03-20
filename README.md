@@ -1,6 +1,7 @@
 # cloudflare 优选正确姿势！！！
 
 > 作者：端端/Gotchaaa，转载请标明作者，感谢！
+> 感谢脚本真正核心的开源项目：[CloudflareSpeedTest](https://github.com/XIU2/CloudflareSpeedTest)
 
 #### 帮几位pter做了一下优选，发现很多pter实际上优选姿势很差劲😅 ，特此出这个教程，方便大家在PT路上走的更轻松
 #### 新版教程适用于 amd 或 arm 架构的 linux 系统
