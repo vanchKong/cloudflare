@@ -11,15 +11,13 @@
 ## 大更新！真正的自动化
 下载 cfst.sh 到任意目录，如果命令行下载不了，请尝试另外几个镜像地址，或者到浏览器打开这个链接下载源文件，手动传到你的设备上
 
-`wget https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh`
-
-`wget https://ghproxy.net/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh`
-
-`wget https://gh-proxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh`
-
-`wget https://ghfast.top/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh`
-
-`wget https://ghproxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh`
+```
+wget https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget https://ghproxy.net/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget https://gh-proxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget https://ghfast.top/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget https://ghproxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+```
 
 直接运行 `bash cfst.sh` 即可，脚本默认有 `UB` 和 `ZM`
 
