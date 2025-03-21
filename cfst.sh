@@ -25,9 +25,10 @@ init_setup() {
     [ ! -d "$CF_DIR" ] && mkdir -p "$CF_DIR"
     
     # 首次运行时初始化 hosts 记录
+    current_ip=$(get_current_ip)
     for domain in "${INITIAL_DOMAINS[@]}"; do
         if ! grep -q " ${domain}$" /etc/hosts; then
-            current_ip="1.1.1.1"
+            [ -z "$current_ip" ] && current_ip="1.1.1.1"
             echo "${current_ip} ${domain}" >> /etc/hosts
         fi
     done
