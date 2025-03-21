@@ -7,7 +7,7 @@
 # 配置参数
 CF_DIR="/opt/CloudflareST"
 CF_BIN="${CF_DIR}/CloudflareST"
-INITIAL_DOMAINS=("ubits.club" "t.ubits.club" "zmpt.cc")  # 修正初始域名组
+INITIAL_DOMAINS=("ubits.club" "t.ubits.club" "zmpt.cc")  # 初始域名组
 
 # 架构检测
 setup_arch() {
@@ -25,13 +25,13 @@ init_setup() {
     [ ! -d "$CF_DIR" ] && mkdir -p "$CF_DIR"
     
     # 首次运行时初始化 hosts 记录
-    if ! grep -q "${INITIAL_DOMAINS[0]}" /etc/hosts; then
-        current_ip="1.1.1.1"
-        for domain in "${INITIAL_DOMAINS[@]}"; do
+    for domain in "${INITIAL_DOMAINS[@]}"; do
+        if ! grep -q " ${domain}$" /etc/hosts; then
+            current_ip="1.1.1.1"
             echo "${current_ip} ${domain}" >> /etc/hosts
-        done
-        echo "✅ 已初始化 hosts 文件"
-    fi
+        fi
+    done
+    echo "✅ 已初始化 hosts 文件"
 
     # 下载 CloudflareST
     if [ ! -f "$CF_BIN" ]; then
@@ -97,8 +97,12 @@ add_single_domain() {
 del_single_domain() {
     local domain=$1
     # 从hosts中删除
-    sed -i "/ ${domain}$/d" /etc/hosts
-    echo "✅ 已移除域名: $domain"
+    if grep -q " ${domain}$" /etc/hosts; then
+        sed -i "/ ${domain}$/d" /etc/hosts
+        echo "✅ 已移除域名: $domain"
+    else
+        echo "⚠️ 域名不存在: $domain"
+    fi
 }
 
 # 获取当前优选IP
@@ -119,15 +123,15 @@ run_update() {
     [ -z "$best_ip" ] && echo "❌ 优选失败" && exit 1
     
     echo "🔄 正在更新 hosts 文件..."
-    # 遍历 hosts 文件更新所有域名
-    sed -i "/ ${INITIAL_DOMAINS[0]}/!d" /etc/hosts  # 保留初始域名
-    while read -r line; do
-        domain=$(echo "$line" | awk '{print $2}')
-        # 删除旧记录
-        sed -i "/ ${domain}$/d" /etc/hosts
-        # 添加新记录
-        echo "$best_ip $domain" >> /etc/hosts
-    done < <(grep " ${INITIAL_DOMAINS[0]}" /etc/hosts)
+    # 遍历初始域名组更新IP
+    for domain in "${INITIAL_DOMAINS[@]}"; do
+        if grep -q " ${domain}$" /etc/hosts; then
+            # 删除旧记录
+            sed -i "/ ${domain}$/d" /etc/hosts
+            # 添加新记录
+            echo "$best_ip $domain" >> /etc/hosts
+        fi
+    done
     
     echo "✅ 所有域名已更新到最新IP: $best_ip"
 }
@@ -135,7 +139,11 @@ run_update() {
 # 查看托管列表
 list_domains() {
     echo "当前托管的域名列表："
-    grep " ${INITIAL_DOMAINS[0]}" /etc/hosts | awk '{print $2}' | sort -u
+    for domain in "${INITIAL_DOMAINS[@]}"; do
+        if grep -q " ${domain}$" /etc/hosts; then
+            echo "$domain"
+        fi
+    done
 }
 
 # 主流程
