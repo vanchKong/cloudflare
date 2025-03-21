@@ -7,7 +7,6 @@
 # 配置参数
 CF_DIR="/opt/CloudflareST"
 CF_BIN="${CF_DIR}/CloudflareST"
-CONFIG_FILE="${CF_DIR}/cfst_domains.conf"
 INITIAL_DOMAINS=("ubits.club" "t.ubits.club" "zmpt.cc")  # 修正初始域名组
 
 # 架构检测
@@ -25,18 +24,12 @@ init_setup() {
     echo "使用姿势请查阅：https://github.com/vanchKong/cloudflare"
     [ ! -d "$CF_DIR" ] && mkdir -p "$CF_DIR"
     
-    # 首次创建配置文件时初始化 hosts
-    if [ ! -f "$CONFIG_FILE" ]; then
-        printf "%s\n" "${INITIAL_DOMAINS[@]}" > "$CONFIG_FILE"
-        echo "✅ 已创建初始配置文件"
-        
-        # 写入初始 hosts 记录（仅首次）
+    # 首次运行时初始化 hosts 记录
+    if ! grep -q "${INITIAL_DOMAINS[0]}" /etc/hosts; then
         current_ip="1.1.1.1"
-        while read -r domain; do
-            if ! grep -q "^${current_ip} ${domain}$" /etc/hosts; then
-                echo "${current_ip} ${domain}" >> /etc/hosts
-            fi
-        done < "$CONFIG_FILE"
+        for domain in "${INITIAL_DOMAINS[@]}"; do
+            echo "${current_ip} ${domain}" >> /etc/hosts
+        done
         echo "✅ 已初始化 hosts 文件"
     fi
 
@@ -84,14 +77,12 @@ validate_domain() {
 add_single_domain() {
     local domain=$1
     # 检测格式并去重
-    if grep -q "^${domain}$" "$CONFIG_FILE"; then
+    if grep -q " ${domain}$" /etc/hosts; then
         echo "⚠️ 域名已存在: $domain" 
         return
     fi
     
     if validate_domain "$domain"; then
-        # 写入配置文件
-        echo "$domain" >> "$CONFIG_FILE"
         # 更新hosts
         current_ip=$(get_current_ip)
         [ -z "$current_ip" ] && current_ip="1.1.1.1"
@@ -105,8 +96,6 @@ add_single_domain() {
 # 删除单个域名
 del_single_domain() {
     local domain=$1
-    # 从配置文件中删除
-    sed -i "/^${domain}$/d" "$CONFIG_FILE"
     # 从hosts中删除
     sed -i "/ ${domain}$/d" /etc/hosts
     echo "✅ 已移除域名: $domain"
@@ -130,13 +119,15 @@ run_update() {
     [ -z "$best_ip" ] && echo "❌ 优选失败" && exit 1
     
     echo "🔄 正在更新 hosts 文件..."
-    # 遍历配置文件更新所有域名
-    while read -r domain; do
+    # 遍历 hosts 文件更新所有域名
+    sed -i "/ ${INITIAL_DOMAINS[0]}/!d" /etc/hosts  # 保留初始域名
+    while read -r line; do
+        domain=$(echo "$line" | awk '{print $2}')
         # 删除旧记录
         sed -i "/ ${domain}$/d" /etc/hosts
         # 添加新记录
         echo "$best_ip $domain" >> /etc/hosts
-    done < "$CONFIG_FILE"
+    done < <(grep " ${INITIAL_DOMAINS[0]}" /etc/hosts)
     
     echo "✅ 所有域名已更新到最新IP: $best_ip"
 }
@@ -144,7 +135,7 @@ run_update() {
 # 查看托管列表
 list_domains() {
     echo "当前托管的域名列表："
-    cat "$CONFIG_FILE" | sort -u
+    grep " ${INITIAL_DOMAINS[0]}" /etc/hosts | awk '{print $2}' | sort -u
 }
 
 # 主流程
