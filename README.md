@@ -29,7 +29,8 @@ wget https://ghproxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/
 
 另外，还有移除优选域名命令： `bash cfst.sh -del example.com`，展示当前优选列表命令：`bash cfst.sh -list`
 
-需要注意的是，使用这个版本的，不要手动修改hosts文件中优选的记录，需要敲命令来增加和删除，如果一定要手动的话，请一并删除 `/opt/CloudflareST/cfst_domains.conf` 文件中相应的记录
+最新版已经不再需要这样操作，直接执行命令或者直接手动修改hosts文件都可以
+~~需要注意的是，使用这个版本的，不要手动修改hosts文件中优选的记录，需要敲命令来增加和删除，如果一定要手动的话，请一并删除 `/opt/CloudflareST/cfst_domains.conf` 文件中相应的记录~~
 
 优选完或是增加域名指向后，如果你是docker启动的相关服务，请重启容器。优选这个操作不需要很频繁，偶尔看看红种情况，发现大面积红种了，就去优选一下（不过也可能被运营商直接阻断了）。
 
