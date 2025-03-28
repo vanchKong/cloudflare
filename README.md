@@ -39,6 +39,8 @@ wget https://ghproxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/
 
 优选完或是增加域名指向后，如果你是docker启动的相关服务，请重启容器。优选这个操作不需要很频繁，偶尔看看红种情况，发现大面积红种了，就去优选一下（不过也可能被运营商直接阻断了）。
 
+需要重新优选的时候，直接运行 `bash cfst.sh` 即可（记得保证自己在正确的目录，即当前目录下有 `bash cfst.sh` 文件）
+
 --- 
 <details>
   <summary>以下是旧版教程，依然适用，上面的脚本也是在做差不多同样的事情</summary>
@@ -102,8 +104,6 @@ wget https://ghproxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/
 > 接下来就会正常进行优选，并替换掉所有和你填写ip匹配的记录
 >
 > 后续添加站点：确认好域名是挂靠在cf下之后，将该域名添加到hosts文件，编辑保存即可
->
-> 需要重新优选的时候，直接运行 `bash cfst.sh` 即可（记得保证自己在正确的目录，即当前目录下有 `bash cfst.sh` 文件）
 >
 > 如果你是docker启动的qb、tr、mp、iyuu，优选后，建议重启这些容器。优选周期其实可以拉的很长，所以重启也不会很频繁
 
