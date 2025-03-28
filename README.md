@@ -103,6 +103,9 @@ wget https://ghproxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/
 >
 > 后续添加站点：确认好域名是挂靠在cf下之后，将该域名添加到hosts文件，编辑保存即可
 >
+> 需要重新优选的时候，直接运行 `bash cfst.sh` 即可（记得保证自己在正确的目录，即当前目录下有 `bash cfst.sh` 文件）
+>
 > 如果你是docker启动的qb、tr、mp、iyuu，优选后，建议重启这些容器。优选周期其实可以拉的很长，所以重启也不会很频繁
+
 
 </details>
