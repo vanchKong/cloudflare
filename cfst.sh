@@ -118,7 +118,7 @@ get_current_ip() {
 # 执行优选并更新所有域名
 run_update() {
     echo "⏳ 开始优选测试..."
-    cd "$CF_DIR" && ./CloudflareST -dn 15 -tl 400 -sl 1
+    cd "$CF_DIR" && ./CloudflareST -dn 8 -tl 400 -sl 1
     
     local best_ip=$(get_current_ip)
     [ -z "$best_ip" ] && echo "❌ 优选失败" && exit 1
