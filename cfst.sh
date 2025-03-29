@@ -14,7 +14,6 @@ setup_arch() {
     case $(uname -m) in
         x86_64)  echo "amd64" ;;
         aarch64) echo "arm64" ;;
-        arm64) echo "arm64" ;;
         *)       echo "unsupported" ;;
     esac
 }
