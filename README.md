@@ -41,6 +41,8 @@ wget https://ghproxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/
 
 需要重新优选的时候，直接运行 `bash cfst.sh` 即可（记得保证自己在正确的目录，即当前目录下有 `bash cfst.sh` 文件）
 
+PS: 无效响应头代表你本身连接性已经很差，很难连上，所以也就获取不到响应头，这个时候就手动确认这个站点或 tracker 实际是否是托管在 cf 的（这个如何确认教程中有），是的话就手动添加该域名或 tracker 到 hosts 文件，ip 就用现在已经出来的
+
 --- 
 <details>
   <summary>以下是旧版教程，依然适用，上面的脚本也是在做差不多同样的事情</summary>
