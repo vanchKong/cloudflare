@@ -272,21 +272,17 @@ init_setup() {
     # 首次运行时初始化 hosts 记录
     current_ip=$(get_current_ip)
     
-    # 创建临时文件
-    temp_hosts=$(mktemp)
-    echo "📝 临时文件位置: $temp_hosts" >&2
-    
-    # 保留原有的非脚本添加的记录
-    grep -v "${current_ip} " /etc/hosts > "$temp_hosts"
+    # 删除所有当前优选 IP 的记录
+    if [ ! -z "$current_ip" ]; then
+        echo "🗑️ 清理当前优选 IP 记录..."
+        sed -i "/^${current_ip} /d" /etc/hosts
+    fi
     
     # 按顺序添加新域名
     domains=($(load_pt_domains))
     for domain in "${domains[@]}"; do
-        echo "${current_ip} ${domain}" >> "$temp_hosts"
+        echo "${current_ip} ${domain}" >> /etc/hosts
     done
-    
-    # 替换原文件
-    mv "$temp_hosts" /etc/hosts
     
     echo "✅ 已初始化 hosts 文件"
     
@@ -408,13 +404,17 @@ run_update() {
     while IFS= read -r line; do
         # 跳过注释行和空行
         [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
-        # 提取域名
+        # 提取域名和 IP
+        ip=$(echo "$line" | awk '{print $1}')
         domain=$(echo "$line" | awk '{print $2}')
-        if [ ! -z "$domain" ]; then
-            # 删除旧记录
-            sed -i "/ ${domain}$/d" /etc/hosts
-            # 添加新记录
-            echo "$best_ip $domain" >> /etc/hosts
+        # 只更新之前优选 IP 和 1.1.1.1 的记录
+        if [[ "$ip" == "1.1.1.1" || "$ip" == "$current_ip" ]]; then
+            if [ ! -z "$domain" ]; then
+                # 删除旧记录
+                sed -i "/ ${domain}$/d" /etc/hosts
+                # 添加新记录
+                echo "$best_ip $domain" >> /etc/hosts
+            fi
         fi
     done < /etc/hosts
     
