@@ -277,7 +277,7 @@ init_setup() {
     echo "📝 临时文件位置: $temp_hosts" >&2
     
     # 保留原有的非脚本添加的记录
-    grep -v " ${current_ip} " /etc/hosts > "$temp_hosts"
+    grep -v "${current_ip} " /etc/hosts > "$temp_hosts"
     
     # 按顺序添加新域名
     domains=($(load_pt_domains))
