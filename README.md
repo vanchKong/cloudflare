@@ -27,7 +27,11 @@ wget -q --show-progress -O cfst.sh https://ghproxy.com/https://raw.githubusercon
 > `curl https://{domain}`
 > 如果结果是这样的：`curl: (35) Recv failure: Connection reset by peer`，那就是sni阻断，优选也无法解决这个问题，只能等站点提供新的域名或使用代理
 
+
 ------------------
+# 更新分割线！！！！
+
+
 
 #### 帮几位pter做了一下优选，发现很多pter实际上优选姿势很差劲😅 ，特此出这个教程，方便大家在PT路上走的更轻松
 #### 新版教程适用于 amd 或 arm 架构的 linux 系统

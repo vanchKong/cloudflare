@@ -64,17 +64,24 @@ check_dependencies() {
     if ! command -v jq &> /dev/null; then
         echo "正在安装 jq..."
         if command -v apt-get &> /dev/null; then
-            apt-get update && apt-get install -y jq
+            apt-get update -o Acquire::AllowInsecureRepositories=true -o Acquire::AllowDowngradeToInsecureRepositories=true 2>/dev/null
+            apt-get install -y jq 2>/dev/null
         elif command -v yum &> /dev/null; then
-            yum install -y jq
+            yum install -y jq 2>/dev/null
         elif command -v dnf &> /dev/null; then
-            dnf install -y jq
+            dnf install -y jq 2>/dev/null
         elif command -v pacman &> /dev/null; then
-            pacman -Sy --noconfirm jq
+            pacman -Sy --noconfirm jq 2>/dev/null
         elif command -v brew &> /dev/null; then
-            brew install jq
+            brew install jq 2>/dev/null
         else
             echo "❌ 无法安装 jq，请手动安装后重试"
+            exit 1
+        fi
+        
+        # 验证安装是否成功
+        if ! command -v jq &> /dev/null; then
+            echo "❌ jq 安装失败，请手动安装后重试"
             exit 1
         fi
     fi
@@ -362,8 +369,10 @@ list_domains() {
             if [ -z "$domain" ]; then
                 continue
             fi
-            if grep -q " ${domain}$" /etc/hosts; then
-                echo "$domain"
+            # 从 hosts 文件中获取 IP
+            ip=$(grep " ${domain}$" /etc/hosts | awk '{print $1}')
+            if [ ! -z "$ip" ]; then
+                echo "$ip $domain"
             fi
         done < <(jq -c '.sites[].domains[], .sites[].trackers[]' "$PT_SITES_FILE")
         
