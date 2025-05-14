@@ -4,6 +4,31 @@
 > 
 > 感谢脚本真正核心的开源项目：[CloudflareSpeedTest](https://github.com/XIU2/CloudflareSpeedTest)
 
+## 再次更新！！
+1.下载 cfst.sh 到任意目录，如果命令行下载不了，请尝试另外几个镜像地址，或者到浏览器打开这个链接下载源文件，手动传到你的设备上。
+```
+wget -q --show-progress -O cfst.sh https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget -q --show-progress -O cfst.sh https://ghproxy.net/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget -q --show-progress -O cfst.sh https://gh-proxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget -q --show-progress -O cfst.sh https://ghfast.top/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget -q --show-progress -O cfst.sh https://ghproxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+```
+2.在这个脚本的目录下执行 `bash cfst.sh` 即可。
+
+> 新版本的优选已经自动覆盖绝大部分站点，如果你有新的站点，请整理好站点域名和 tracker 域名，已经是否托管在 cf 下的信息，在 QQ 或 微信搜索 `端端` 来向我提交
+
+> 脚本做了什么？
+> 每次运行 `bash cfst.sh` 时，会自动下载远程的加密域名文件，我会尽量保持更新这个域名文件，然后脚本会自动检测这些域名是否托管在 cf 下，以检测结果为准来决定是否添加优选，当无法获取请求头时，以域名文件中预设的结果（这是我事先检查过是否托管的结果，不具备绝对的时效性，仅在你无法获取响应头时会使用）来决定是否添加优选。其他的 `add、del、list` 功能依然照旧
+
+> 另外，提供一个快捷确认域名是否托管在 cf 下的命令：`curl -sI "https://{domain}" --connect-timeout 10 | grep -i 'server:'`
+> 替换 `{domain}` 即可，结果是 `server: cloudflare` 则代表托管在 cf 下
+
+> 有的时候优选不一定能解决你的连接性问题，你可以通过 curl 命令来确定
+> `curl https://{domain}`
+> 如果结果是这样的：`curl: (35) Recv failure: Connection reset by peer`，那就是sni阻断，优选也无法解决这个问题，只能等站点提供新的域名或使用代理
+
+------------------
+
 #### 帮几位pter做了一下优选，发现很多pter实际上优选姿势很差劲😅 ，特此出这个教程，方便大家在PT路上走的更轻松
 #### 新版教程适用于 amd 或 arm 架构的 linux 系统
 #### 旧版教程中，arm架构的设备可以去直接替换掉下面教程中的 amd 的文件名（amd64 -> arm64），解压的时候注意也替换一下文件名
@@ -19,11 +44,11 @@
 下载 cfst.sh 到任意目录，如果命令行下载不了，请尝试另外几个镜像地址，或者到浏览器打开这个链接下载源文件，手动传到你的设备上
 
 ```
-wget https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
-wget https://ghproxy.net/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
-wget https://gh-proxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
-wget https://ghfast.top/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
-wget https://ghproxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget -q --show-progress -O cfst.sh https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget -q --show-progress -O cfst.sh https://ghproxy.net/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget -q --show-progress -O cfst.sh https://gh-proxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget -q --show-progress -O cfst.sh https://ghfast.top/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
+wget -q --show-progress -O cfst.sh https://ghproxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
 ```
 
 直接运行 `bash cfst.sh` 即可，脚本默认有 `UB` 和 `ZM`

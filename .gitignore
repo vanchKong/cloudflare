@@ -1,0 +1,7 @@
+# PT 站点配置文件
+pt_sites.json
+encrypt_pt_sites.sh
+
+# 其他常见忽略文件
+.DS_Store
+*.log 
