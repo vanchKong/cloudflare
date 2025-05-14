@@ -131,7 +131,7 @@ check_domain_headers() {
     done
     
     echo >&2  # 换行
-    echo "❌ $masked_domain: 无法获取响应头，请主动确认站点或 tracker 是否托管于 Cloudflare，手动修改 /etc/hosts 文件" >&2
+    echo "❌ $masked_domain: 无法获取响应头，根据预设配置决定是否强制添加优选，不保证绝对正确！可主动确认该域名是否托管于 Cloudflare，手动修改 /etc/hosts 文件" >&2
     echo "unknown"
     return 1
 }
