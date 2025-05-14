@@ -29,7 +29,7 @@ wget -q --show-progress -O cfst.sh https://ghproxy.com/https://raw.githubusercon
 
 
 ------------------
-# 更新分割线！！！！
+# 更新分割线！！！！后面的内容也可以看一看，方便你了解脚本到底做了些什么
 
 
 
