@@ -14,6 +14,7 @@ wget -q --show-progress -O cfst.sh https://ghfast.top/https://raw.githubusercont
 wget -q --show-progress -O cfst.sh https://ghproxy.com/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
 ```
 2.在这个脚本的目录下执行 `bash cfst.sh` 即可。
+3.重启相关容器。
 
 > 新版本的优选已经自动覆盖绝大部分站点，如果你有新的站点，请整理好站点域名和 tracker 域名，已经是否托管在 cf 下的信息，在 QQ 或 微信搜索 `端端` 来向我提交
 
