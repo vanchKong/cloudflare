@@ -408,30 +408,37 @@ function Run-Update {
 
 # 主流程
 function Main {
+    param(
+        [Parameter(Position=0)]
+        [string]$Command,
+        
+        [Parameter(Position=1, ValueFromRemainingArguments=$true)]
+        [string[]]$Arguments
+    )
+
     # 检查管理员权限
     if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
         Write-Host "需要管理员权限" -ForegroundColor Red
         exit 1
     }
 
-    $args = $MyInvocation.UnboundArguments
-    switch ($args[0]) {
+    switch ($Command) {
         "-add" {
-            if ($args.Count -lt 2) {
+            if ($Arguments.Count -eq 0) {
                 Write-Host "需要域名参数" -ForegroundColor Red
                 exit 1
             }
-            $domains = $args[1..($args.Count-1)] -join ' ' -split '[,\s]+'
+            $domains = $Arguments -join ' ' -split '[,\s]+'
             foreach ($domain in $domains) {
                 Add-SingleDomain $domain
             }
         }
         "-del" {
-            if ($args.Count -lt 2) {
+            if ($Arguments.Count -eq 0) {
                 Write-Host "需要域名参数" -ForegroundColor Red
                 exit 1
             }
-            $domains = $args[1..($args.Count-1)] -join ' ' -split '[,\s]+'
+            $domains = $Arguments -join ' ' -split '[,\s]+'
             foreach ($domain in $domains) {
                 Remove-SingleDomain $domain
             }
@@ -453,4 +460,4 @@ function Main {
 }
 
 # 执行主流程
-Main 
+Main $args[0] $args[1..($args.Count-1)] 
