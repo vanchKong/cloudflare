@@ -7,7 +7,7 @@
 ## 再次更新！！
 0.建议先备份好 `/etc/hosts` 中的非优选记录，然后删除MP优选插件、删除 `/etc/hosts` 中所有优选记录
 
-1.进入需要优选机器的 shell，下载 cfst.sh 到任意目录，如果命令行下载不了，请尝试另外几个镜像地址，或者到浏览器打开这个链接下载源文件，手动传到你的设备上。
+1.进入需要优选机器的 shell（ssh 连接），下载 cfst.sh 到任意目录，如果命令行下载不了，请尝试另外几个镜像地址，或者到浏览器打开这个链接下载源文件，手动传到你的设备上。
 ```
 wget -q --show-progress -O cfst.sh https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
 wget -q --show-progress -O cfst.sh https://ghproxy.net/https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/cfst.sh
