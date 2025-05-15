@@ -425,11 +425,6 @@ run_update() {
 main() {
     [ "$(id -u)" -ne 0 ] && echo "需要root权限" && exit 1
     
-    # 尝试下载并更新配置文件
-    download_config
-    
-    # 检查配置文件是否存在
-    check_config
 
     case "$1" in
         "-add")
@@ -452,9 +447,14 @@ main() {
             list_domains
             ;;
         *)
-            init_setup
-            run_update
-            ;;
+    # 尝试下载并更新配置文件
+    download_config
+    
+    # 检查配置文件是否存在
+    check_config
+    init_setup
+    run_update
+    ;;
     esac
 }
 
