@@ -26,7 +26,7 @@ download_config() {
     
     echo "📥 正在下载配置文件..." >&2
     for url in "${mirrors[@]}"; do
-        if wget --show-progress --timeout=20 -O "${PT_SITES_ENC}.tmp" "$url"; then
+        if wget --tries=2 --waitretry=1 --show-progress --timeout=20 -O "${PT_SITES_ENC}.tmp" "$url"; then
             # 验证下载的文件是否可解密
             if openssl enc -aes-256-cbc -pbkdf2 -d -salt -in "${PT_SITES_ENC}.tmp" -out "$PT_SITES_FILE" -pass pass:"$ENCRYPTION_KEY" 2>/dev/null; then
                 mv "${PT_SITES_ENC}.tmp" "$PT_SITES_ENC"
@@ -301,7 +301,7 @@ init_setup() {
         )
 
         for url in "${mirrors[@]}"; do
-            if wget --show-progress --timeout=20 -O "${CF_DIR}/$filename" "$url"; then
+            if wget --tries=2 --waitretry=1 --show-progress --timeout=20 -O "${CF_DIR}/$filename" "$url"; then
                 tar -zxf "${CF_DIR}/$filename" -C "$CF_DIR" && chmod +x "$CF_BIN"
                 rm "${CF_DIR}/$filename"
                 return 0
