@@ -272,14 +272,16 @@ init_setup() {
     # 首次运行时初始化 hosts 记录
     current_ip=$(get_current_ip)
     
+    domains=($(load_pt_domains))
     # 删除所有当前优选 IP 的记录
     if [ ! -z "$current_ip" ]; then
         echo "🗑️ 清理当前优选 IP 记录..."
-        sed -i "/^${current_ip} /d" /etc/hosts
+        for domain in "${domains[@]}"; do
+            sed -i "/^${current_ip} ${domain}$/d" /etc/hosts
+        done
     fi
     
     # 按顺序添加新域名
-    domains=($(load_pt_domains))
     for domain in "${domains[@]}"; do
         echo "${current_ip} ${domain}" >> /etc/hosts
     done
