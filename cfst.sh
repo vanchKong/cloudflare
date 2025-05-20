@@ -331,19 +331,46 @@ init_setup() {
 # 添加单个域名
 add_single_domain() {
     local domain=$1
+
     # 检测格式并去重
     if grep -q " ${domain}$" /etc/hosts; then
-        echo "⚠️ 域名已存在: $domain" 
+        echo "⚠️ 域名已存在: $domain"
         return
     fi
-    
-    if check_domain_headers "$domain" "true"; then
-        # 更新hosts
-        current_ip=$(get_current_ip)
-        echo "$current_ip $domain" >> /etc/hosts
-        echo "✅ 已添加域名: $domain"
+    download_config
+    # 1. 先尝试解密配置文件并查找预设
+    local is_cf_preset=""
+    if [ -f "$PT_SITES_ENC" ]; then
+        if openssl enc -aes-256-cbc -pbkdf2 -d -salt -in "$PT_SITES_ENC" -out "$PT_SITES_FILE" -pass pass:"$ENCRYPTION_KEY" 2>/dev/null; then
+            is_cf_preset=$(jq -r --arg d "$domain" '
+                [.sites[].domains[], .sites[].trackers[]]
+                | map(select(.domain == $d)) | .[0].is_cf // empty
+            ' "$PT_SITES_FILE")
+            rm -f "$PT_SITES_FILE"
+        fi
+    fi
+
+    # 2. 判断逻辑
+    if [ "$is_cf_preset" = "true" ] || [ "$is_cf_preset" = "false" ]; then
+        # 有预设，直接用预设
+        actual_status=$(check_domain_headers "$domain" "$is_cf_preset")
+        if [ "$actual_status" = "cf" ] || { [ "$actual_status" = "unknown" ] && [ "$is_cf_preset" = "true" ]; }; then
+            current_ip=$(get_current_ip)
+            echo "$current_ip $domain" >> /etc/hosts
+            echo "➕ 添加域名(预设): $domain" >&2
+        else
+            echo "❌ 跳过非CF域名: $domain" >&2
+        fi
     else
-        echo "❌ 跳过无效域名: $domain" 
+        # 没有预设，按未知逻辑
+        actual_status=$(check_domain_headers "$domain" "unknown")
+        if [ "$actual_status" = "cf" ]; then
+            current_ip=$(get_current_ip)
+            echo "$current_ip $domain" >> /etc/hosts
+            echo "➕ 添加域名(CF): $domain" >&2
+        else
+            echo "❌ 跳过无效域名: $domain" >&2
+        fi
     fi
 }
 
