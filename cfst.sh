@@ -348,7 +348,6 @@ add_single_domain() {
             rm -f "$PT_SITES_FILE"
         fi
     fi
-
     # 2. 判断逻辑
     if [ "$is_cf_preset" = "true" ] || [ "$is_cf_preset" = "false" ]; then
         # 有预设，直接用预设
@@ -361,6 +360,7 @@ add_single_domain() {
             echo "❌ 跳过非CF域名: $domain" >&2
         fi
     else
+        echo "$domain 预设 $is_cf_preset" >&2
         # 没有预设，按未知逻辑
         actual_status=$(check_domain_headers "$domain" "unknown")
         if [ "$actual_status" = "cf" ]; then
