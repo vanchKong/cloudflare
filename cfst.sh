@@ -337,7 +337,6 @@ add_single_domain() {
         echo "⚠️ 域名已存在: $domain"
         return
     fi
-    download_config
     # 1. 先尝试解密配置文件并查找预设
     local is_cf_preset=""
     if [ -f "$PT_SITES_ENC" ]; then
@@ -458,6 +457,7 @@ main() {
     case "$1" in
         "-add")
             shift
+            download_config
             [ $# -eq 0 ] && echo "需要域名参数" && exit 1
             domains=$(echo "$@" | tr ',' ' ')
             for domain in $domains; do
