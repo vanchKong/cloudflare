@@ -269,19 +269,18 @@ init_setup() {
     
     [ ! -d "$CF_DIR" ] && mkdir -p "$CF_DIR"
     
-    # 首次运行时初始化 hosts 记录
+    # 获取当前优选 IP
     current_ip=$(get_current_ip)
     
+    # 加载并获取有效的域名列表
     domains=($(load_pt_domains))
-    # 删除所有当前优选 IP 的记录
-    if [ ! -z "$current_ip" ]; then
-        echo "🗑️ 清理当前优选 IP 记录..."
-        for domain in "${domains[@]}"; do
-            sed -i "/^${current_ip} ${domain}$/d" /etc/hosts
-        done
-    fi
     
-    # 按顺序添加新域名
+    # 删除加密文件中存在的域名的优选记录
+    for domain in "${domains[@]}"; do
+        sed -i "/^${current_ip} ${domain}$/d" /etc/hosts
+    done
+    
+    # 重新添加加密文件中的域名记录
     for domain in "${domains[@]}"; do
         echo "${current_ip} ${domain}" >> /etc/hosts
     done
@@ -387,64 +386,40 @@ del_single_domain() {
 
 # 查看托管列表
 list_domains() {
-    echo "当前托管的域名列表："
-    if [ -f "$PT_SITES_ENC" ]; then
-        # 解密文件
-        if ! openssl enc -aes-256-cbc -pbkdf2 -d -salt -in "$PT_SITES_ENC" -out "$PT_SITES_FILE" -pass pass:"$ENCRYPTION_KEY"; then
-            echo "❌ 解密文件失败" >&2
-            exit 1
-        fi
-
-        # 读取所有域名
-        while IFS= read -r line; do
-            if [ -z "$line" ]; then
-                continue
-            fi
-            domain=$(echo "$line" | jq -r '.domain // empty')
-            if [ -z "$domain" ]; then
-                continue
-            fi
-            # 从 hosts 文件中获取 IP
-            ip=$(grep " ${domain}$" /etc/hosts | awk '{print $1}')
-            if [ ! -z "$ip" ]; then
-                echo "$ip $domain"
-            fi
-        done < <(jq -c '.sites[].domains[], .sites[].trackers[]' "$PT_SITES_FILE")
-        
-        # 清理临时文件
-        rm -f "$PT_SITES_FILE"
+    echo "当前优选的域名列表："
+    current_ip=$(get_current_ip)
+    
+    if [ -z "$current_ip" ]; then
+        echo "❌ 未找到当前优选 IP" >&2
+        exit 1
+    fi
+    
+    # 从 hosts 文件中获取当前优选 IP 对应的所有域名
+    if [ -f "/etc/hosts" ]; then
+        grep "^${current_ip} " /etc/hosts | awk '{print $2}'
     else
-        echo "❌ 未找到加密的站点配置文件" >&2
+        echo "❌ 未找到 hosts 文件" >&2
         exit 1
     fi
 }
 
 # 执行优选并更新所有域名
 run_update() {
+    # 获取当前优选 IP
+    local current_ip=$(get_current_ip)
+    [ -z "$current_ip" ] && echo "❌ 未找到当前优选 IP" && exit 1
+    
     echo "⏳ 开始优选测试..."
     cd "$CF_DIR" && ./CloudflareST -dn 8 -tl 400 -sl 1
     
+    # 获取新的优选 IP
     local best_ip=$(get_current_ip)
     [ -z "$best_ip" ] && echo "❌ 优选失败" && exit 1
     
     echo "🔄 正在更新 hosts 文件..."
-    # 从 hosts 文件中获取所有域名并更新 IP
-    while IFS= read -r line; do
-        # 跳过注释行和空行
-        [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
-        # 提取域名和 IP
-        ip=$(echo "$line" | awk '{print $1}')
-        domain=$(echo "$line" | awk '{print $2}')
-        # 只更新之前优选 IP 和 1.1.1.1 的记录
-        if [[ "$ip" == "1.1.1.1" || "$ip" == "$current_ip" ]]; then
-            if [ ! -z "$domain" ]; then
-                # 删除旧记录
-                sed -i "/ ${domain}$/d" /etc/hosts
-                # 添加新记录
-                echo "$best_ip $domain" >> /etc/hosts
-            fi
-        fi
-    done < /etc/hosts
+    
+    # 更新所有当前优选 IP 的记录到新的优选 IP
+    sed -i "s/^${current_ip} /${best_ip} /" /etc/hosts
     
     echo "✅ 所有域名已更新到最新IP: $best_ip"
 }
