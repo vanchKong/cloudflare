@@ -277,7 +277,7 @@ init_setup() {
     
     # 删除加密文件中存在的域名的优选记录
     for domain in "${domains[@]}"; do
-        sed -i "/^${current_ip} ${domain}$/d" /etc/hosts
+        sed -i "/ ${domain}$/d" /etc/hosts
     done
     
     # 重新添加加密文件中的域名记录
@@ -330,12 +330,22 @@ init_setup() {
 # 添加单个域名
 add_single_domain() {
     local domain=$1
+    local current_ip=$(get_current_ip)
 
-    # 检测格式并去重
+    # 检测格式并检查已存在的域名
     if grep -q " ${domain}$" /etc/hosts; then
-        echo "⚠️ 域名已存在: $domain"
+        # 获取当前域名在 hosts 中的 IP
+        local existing_ip=$(grep " ${domain}$" /etc/hosts | awk '{print $1}')
+        if [ "$existing_ip" != "$current_ip" ]; then
+            # 如果 IP 不同，更新为新优选 IP
+            sed -i "s/^${existing_ip} ${domain}$/${current_ip} ${domain}/" /etc/hosts
+            echo "🔄 更新域名 IP: $domain (${existing_ip} -> ${current_ip})"
+        else
+            echo "ℹ️ 域名已存在且 IP 已是最优: $domain"
+        fi
         return
     fi
+
     # 1. 先尝试解密配置文件并查找预设
     local is_cf_preset=""
     if [ -f "$PT_SITES_ENC" ]; then
@@ -352,7 +362,6 @@ add_single_domain() {
         # 有预设，直接用预设
         actual_status=$(check_domain_headers "$domain" "$is_cf_preset")
         if [ "$actual_status" = "cf" ] || { [ "$actual_status" = "unknown" ] && [ "$is_cf_preset" = "true" ]; }; then
-            current_ip=$(get_current_ip)
             echo "$current_ip $domain" >> /etc/hosts
             echo "➕ 添加域名(预设): $domain" >&2
         else
@@ -363,7 +372,6 @@ add_single_domain() {
         # 没有预设，按未知逻辑
         actual_status=$(check_domain_headers "$domain" "unknown")
         if [ "$actual_status" = "cf" ]; then
-            current_ip=$(get_current_ip)
             echo "$current_ip $domain" >> /etc/hosts
             echo "➕ 添加域名(CF): $domain" >&2
         else
