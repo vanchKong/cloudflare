@@ -336,6 +336,14 @@ add_single_domain() {
     if grep -q " ${domain}$" /etc/hosts; then
         # 获取当前域名在 hosts 中的 IP
         local existing_ip=$(grep " ${domain}$" /etc/hosts | awk '{print $1}')
+        
+        # 验证域名是否托管在 Cloudflare
+        local actual_status=$(check_domain_headers "$domain" "unknown")
+        if [ "$actual_status" != "cf" ]; then
+            echo "❌ 域名已存在但非 Cloudflare 托管: $domain"
+            return
+        fi
+        
         if [ "$existing_ip" != "$current_ip" ]; then
             # 如果 IP 不同，更新为新优选 IP
             sed -i "s/^${existing_ip} ${domain}$/${current_ip} ${domain}/" /etc/hosts
