@@ -188,6 +188,8 @@ get_current_ip() {
 
 # 从加密文件加载 PT 站点域名
 load_pt_domains() {
+    local check_cf=${1:-false}  # 默认不检查 CF 托管状态
+    
     if [ -f "$PT_SITES_ENC" ]; then
         echo "📦 正在解密配置文件..." >&2
         # 解密文件
@@ -229,21 +231,26 @@ load_pt_domains() {
                 fi
                 is_cf=$(echo "$line" | jq -r '.is_cf // false')
                 current_domain=$((current_domain + 1))
-                echo -n "[$current_domain/$total_domains] " >&2
                 
-                # 检查域名状态
-                actual_status=$(check_domain_headers "$domain" "$is_cf")
-                
-                # 根据检查结果决定是否添加
-                if [ "$actual_status" = "unknown" ]; then
-                    # 如果无法获取响应头，使用预设值
-                    if [ "$is_cf" = "true" ]; then
-                        echo "➕ 添加域名(预设): $(mask_domain "$domain")" >&2
+                if [ "$check_cf" = "true" ]; then
+                    echo -n "[$current_domain/$total_domains] " >&2
+                    # 检查域名状态
+                    actual_status=$(check_domain_headers "$domain" "$is_cf")
+                    
+                    # 根据检查结果决定是否添加
+                    if [ "$actual_status" = "unknown" ]; then
+                        # 如果无法获取响应头，使用预设值
+                        if [ "$is_cf" = "true" ]; then
+                            echo "➕ 添加域名(预设): $(mask_domain "$domain")" >&2
+                            site_domains+=("$domain")
+                        fi
+                    elif [ "$actual_status" = "cf" ]; then
+                        # 如果确认是 CF 托管，添加域名
+                        echo "➕ 添加域名(CF): $(mask_domain "$domain")" >&2
                         site_domains+=("$domain")
                     fi
-                elif [ "$actual_status" = "cf" ]; then
-                    # 如果确认是 CF 托管，添加域名
-                    echo "➕ 添加域名(CF): $(mask_domain "$domain")" >&2
+                else
+                    # 不检查 CF 托管状态，直接添加域名
                     site_domains+=("$domain")
                 fi
             done < <(jq -c ".sites[$i].domains[]" "$PT_SITES_FILE")
@@ -259,21 +266,26 @@ load_pt_domains() {
                 fi
                 is_cf=$(echo "$line" | jq -r '.is_cf // false')
                 current_domain=$((current_domain + 1))
-                echo -n "[$current_domain/$total_domains] " >&2
                 
-                # 检查域名状态
-                actual_status=$(check_domain_headers "$domain" "$is_cf")
-                
-                # 根据检查结果决定是否添加
-                if [ "$actual_status" = "unknown" ]; then
-                    # 如果无法获取响应头，使用预设值
-                    if [ "$is_cf" = "true" ]; then
-                        echo "➕ 添加 tracker(预设): $(mask_domain "$domain")" >&2
+                if [ "$check_cf" = "true" ]; then
+                    echo -n "[$current_domain/$total_domains] " >&2
+                    # 检查域名状态
+                    actual_status=$(check_domain_headers "$domain" "$is_cf")
+                    
+                    # 根据检查结果决定是否添加
+                    if [ "$actual_status" = "unknown" ]; then
+                        # 如果无法获取响应头，使用预设值
+                        if [ "$is_cf" = "true" ]; then
+                            echo "➕ 添加 tracker(预设): $(mask_domain "$domain")" >&2
+                            site_domains+=("$domain")
+                        fi
+                    elif [ "$actual_status" = "cf" ]; then
+                        # 如果确认是 CF 托管，添加域名
+                        echo "➕ 添加 tracker(CF): $(mask_domain "$domain")" >&2
                         site_domains+=("$domain")
                     fi
-                elif [ "$actual_status" = "cf" ]; then
-                    # 如果确认是 CF 托管，添加域名
-                    echo "➕ 添加 tracker(CF): $(mask_domain "$domain")" >&2
+                else
+                    # 不检查 CF 托管状态，直接添加域名
                     site_domains+=("$domain")
                 fi
             done < <(jq -c ".sites[$i].trackers[]" "$PT_SITES_FILE")
@@ -290,7 +302,9 @@ load_pt_domains() {
             exit 1
         fi
         
-        echo "✅ 域名处理完成，共 ${#domains[@]} 个域名" >&2
+        if [ "$check_cf" = "true" ]; then
+            echo "✅ 域名处理完成，共 ${#domains[@]} 个域名" >&2
+        fi
         printf "%s\n" "${domains[@]}"
     else
         echo "❌ 未找到加密的站点配置文件" >&2
@@ -309,7 +323,7 @@ init_setup() {
     current_ip=$(get_current_ip)
     
     # 加载并获取有效的域名列表
-    domains=($(load_pt_domains))
+    domains=($(load_pt_domains true))
     
     # 删除加密文件中存在的域名的优选记录
     for domain in "${domains[@]}"; do
@@ -466,7 +480,7 @@ run_update() {
     [ -z "$current_ip" ] && echo "❌ 未找到当前优选 IP" && exit 1
     
     echo "⏳ 开始优选测试..."
-    cd "$CF_DIR" && ./CloudflareST -dn 8 -tl 400 -sl 1
+    cd "$CF_DIR" && ./CloudflareST -dn 4 -tl 400 -sl 1
     
     # 获取新的优选 IP
     local best_ip=$(get_current_ip)
@@ -478,6 +492,31 @@ run_update() {
     sed -i "s/^${current_ip} /${best_ip} /" /etc/hosts
     
     echo "✅ 所有域名已更新到最新IP: $best_ip"
+}
+
+# 删除所有优选记录
+del_all_domains() {
+    echo "🗑️ 正在删除所有优选记录..."
+    
+    # 获取当前优选 IP
+    local current_ip=$(get_current_ip)
+    if [ -n "$current_ip" ]; then
+        # 删除指向当前优选 IP 的记录
+        sed -i "/^${current_ip} /d" /etc/hosts
+        echo "✅ 已删除指向当前优选 IP ($current_ip) 的记录"
+    fi
+    
+    # 获取加密文件中的所有域名
+    local domains=($(load_pt_domains))
+    if [ ${#domains[@]} -gt 0 ]; then
+        # 删除加密文件中的域名记录
+        for domain in "${domains[@]}"; do
+            sed -i "/ ${domain}$/d" /etc/hosts
+        done
+        echo "✅ 已删除加密文件中的域名记录"
+    fi
+    
+    echo "✅ 所有优选记录已清理完成"
 }
 
 # 主流程
@@ -517,6 +556,10 @@ main() {
                 del_single_domain "$domain"
             done
             ;;
+        "-delall")
+            download_config
+            del_all_domains
+            ;;
         "-list")
             list_domains
             ;;
@@ -533,8 +576,8 @@ main() {
     
     # 添加用户选择功能
     echo "请选择操作模式："
-    echo "1. 重新载入域名并测速更新优选 IP（首次运行时请选择此项）"
-    echo "2. 不重新载入域名，仅测速更新优选 IP"
+    echo "1. 重新载入并测速获取优选 IP（首次运行时请选择此项）"
+    echo "2. 不重新载入，仅测速获取优选 IP"
     read -p "请输入选项 [1/2]: " choice
     
     case "$choice" in
