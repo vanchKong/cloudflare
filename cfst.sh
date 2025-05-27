@@ -314,8 +314,6 @@ load_pt_domains() {
 
 # 初始化环境
 init_setup() {
-    # 检查并安装依赖
-    check_dependencies
     
     [ ! -d "$CF_DIR" ] && mkdir -p "$CF_DIR"
     
@@ -569,6 +567,8 @@ main() {
     
     # 检查配置文件是否存在
     check_config
+    # 检查并安装依赖
+    check_dependencies
 
     echo "作者：端端🐱/Gotchaaa，玩得开心～"
     echo "感谢 windfree、tianting 帮助完善站点数据"
