@@ -75,8 +75,48 @@ check_dependencies() {
         elif command -v brew &> /dev/null; then
             brew install jq 2>/dev/null
         else
-            echo "❌ 无法安装 jq，请手动安装后重试"
-            exit 1
+            echo "尝试直接下载 jq 二进制文件..."
+            # 获取系统架构
+            local arch=$(setup_arch)
+            local base_url=""
+            
+            case "$arch" in
+                "amd64")
+                    base_url="https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-amd64"
+                    ;;
+                "arm64")
+                    base_url="https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-arm64"
+                    ;;
+                *)
+                    echo "❌ 不支持的架构: $arch"
+                    exit 1
+                    ;;
+            esac
+            
+            # 设置镜像源
+            local mirrors=(
+                "$base_url"
+                "https://ghproxy.com/$base_url"
+                "https://ghfast.top/$base_url"
+                "https://ghproxy.net/$base_url"
+                "https://gh-proxy.com/$base_url"
+            )
+            
+            # 尝试从镜像下载
+            local download_success=false
+            for url in "${mirrors[@]}"; do
+                if wget --tries=2 --waitretry=1 --show-progress --timeout=20 -O "/usr/bin/jq" "$url"; then
+                    chmod +x "/usr/bin/jq"
+                    echo "✅ jq 安装成功"
+                    download_success=true
+                    break
+                fi
+            done
+            
+            if [ "$download_success" = false ]; then
+                echo "❌ jq 下载失败，请手动安装后重试"
+                exit 1
+            fi
         fi
         
         # 验证安装是否成功
@@ -260,10 +300,6 @@ load_pt_domains() {
 
 # 初始化环境
 init_setup() {
-    echo "作者：端端🐱/Gotchaaa，玩得开心～"
-    echo "感谢 windfree、tianting 帮助完善站点数据"
-    echo "使用姿势请查阅：https://github.com/vanchKong/cloudflare"
-    
     # 检查并安装依赖
     check_dependencies
     
@@ -287,29 +323,6 @@ init_setup() {
     
     echo "✅ 已初始化 hosts 文件"
     
-    # 下载 CloudflareST
-    if [ ! -f "$CF_BIN" ]; then
-        arch=$(setup_arch)
-        [ "$arch" = "unsupported" ] && echo "不支持的架构" && exit 1
-        
-        filename="CloudflareST_linux_${arch}.tar.gz"
-        mirrors=(
-            "https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://ghproxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://ghfast.top/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://ghproxy.net/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-        )
-
-        for url in "${mirrors[@]}"; do
-            if wget --tries=2 --waitretry=1 --show-progress --timeout=20 -O "${CF_DIR}/$filename" "$url"; then
-                tar -zxf "${CF_DIR}/$filename" -C "$CF_DIR" && chmod +x "$CF_BIN"
-                rm "${CF_DIR}/$filename"
-                return 0
-            fi
-        done
-        echo "下载失败" && exit 1
-    fi
 }
 
 # 域名有效性检测
@@ -421,6 +434,33 @@ list_domains() {
 
 # 执行优选并更新所有域名
 run_update() {
+    # 下载 CloudflareST
+    if [ ! -f "$CF_BIN" ]; then
+        arch=$(setup_arch)
+        [ "$arch" = "unsupported" ] && echo "不支持的架构" && exit 1
+        
+        filename="CloudflareST_linux_${arch}.tar.gz"
+        mirrors=(
+            "https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://ghproxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://ghfast.top/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://ghproxy.net/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+        )
+
+        for url in "${mirrors[@]}"; do
+            if wget --tries=2 --waitretry=1 --show-progress --timeout=20 -O "${CF_DIR}/$filename" "$url"; then
+                tar -zxf "${CF_DIR}/$filename" -C "$CF_DIR" && chmod +x "$CF_BIN"
+                rm "${CF_DIR}/$filename"
+                break
+            fi
+        done
+        
+        if [ ! -f "$CF_BIN" ]; then
+            echo "❌ CloudflareST 下载失败" && exit 1
+        fi
+    fi
+
     # 获取当前优选 IP
     local current_ip=$(get_current_ip)
     [ -z "$current_ip" ] && echo "❌ 未找到当前优选 IP" && exit 1
@@ -442,6 +482,20 @@ run_update() {
 
 # 主流程
 main() {
+    # 如果 /opt/cfst_hosts.sh、/opt/ipv6.txt、/opt/ip.txt 存在，则删除
+    if [ -f "/opt/cfst_hosts.sh" ]; then
+        rm -f "/opt/cfst_hosts.sh"
+    fi
+    if [ -f "/opt/ipv6.txt" ]; then
+        rm -f "/opt/ipv6.txt"
+    fi
+    if [ -f "/opt/ip.txt" ]; then
+        rm -f "/opt/ip.txt"
+    fi
+    # 如果存在非目录文件 /opt/CloudflareST 则删除
+    if [ -f "/opt/CloudflareST" ]; then
+        rm -f "/opt/CloudflareST"
+    fi
     [ "$(id -u)" -ne 0 ] && echo "需要root权限" && exit 1
     
 
@@ -472,8 +526,32 @@ main() {
     
     # 检查配置文件是否存在
     check_config
-    init_setup
-    run_update
+
+    echo "作者：端端🐱/Gotchaaa，玩得开心～"
+    echo "感谢 windfree、tianting 帮助完善站点数据"
+    echo "使用姿势请查阅：https://github.com/vanchKong/cloudflare"
+    
+    # 添加用户选择功能
+    echo "请选择操作模式："
+    echo "1. 重新载入域名并测速更新优选 IP（首次运行时请选择此项）"
+    echo "2. 不重新载入域名，仅测速更新优选 IP"
+    read -p "请输入选项 [1/2]: " choice
+    
+    case "$choice" in
+        1)
+            echo "🔄 执行完整更新流程..."
+            init_setup
+            run_update
+            ;;
+        2)
+            echo "🔄 仅执行测速更新..."
+            run_update
+            ;;
+        *)
+            echo "❌ 无效的选项，请重新运行脚本"
+            exit 1
+            ;;
+    esac
     ;;
     esac
 }
