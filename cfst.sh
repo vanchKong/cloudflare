@@ -148,7 +148,7 @@ check_domain_headers() {
     echo "🔍 检查域名: $masked_domain" >&2
     while [ $retry_count -lt $max_retries ]; do
         echo -n "." >&2
-        headers=$(curl -sI "https://$domain" --connect-timeout 10 | grep -i 'server:')
+        headers=$(timeout 10 curl -sI "https://$domain" --connect-timeout 10 | grep -i 'server:')
         if [ ! -z "$headers" ]; then
             echo >&2  # 换行
             if [[ "$headers" =~ [Cc]loudflare ]]; then
