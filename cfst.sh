@@ -18,10 +18,12 @@ download_config() {
     local config_url="https://raw.githubusercontent.com/vanchKong/cloudflare/refs/heads/main/pt_sites.enc"
     local mirrors=(
         "$config_url"
-        "https://ghproxy.com/$config_url"
+        "https://hk.gh-proxy.com/$config_url"
+        "https://gh-proxy.com/$config_url"
+        "https://cdn.gh-proxy.com/$config_url"
+        "https://edgeone.gh-proxy.com/$config_url"
         "https://ghfast.top/$config_url"
         "https://ghproxy.net/$config_url"
-        "https://gh-proxy.com/$config_url"
     )
     
     echo "📥 正在下载配置文件..." >&2
@@ -96,10 +98,12 @@ check_dependencies() {
             # 设置镜像源
             local mirrors=(
                 "$base_url"
-                "https://ghproxy.com/$base_url"
+                "https://hk.gh-proxy.com/$base_url"
+                "https://gh-proxy.com/$base_url"
+                "https://cdn.gh-proxy.com/$base_url"
+                "https://edgeone.gh-proxy.com/$base_url"
                 "https://ghfast.top/$base_url"
                 "https://ghproxy.net/$base_url"
-                "https://gh-proxy.com/$base_url"
             )
             
             # 尝试从镜像下载
@@ -454,10 +458,12 @@ run_update() {
         filename="CloudflareST_linux_${arch}.tar.gz"
         mirrors=(
             "https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://ghproxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://hk.gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://cdn.gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://edgeone.gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
             "https://ghfast.top/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
             "https://ghproxy.net/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
         )
 
         for url in "${mirrors[@]}"; do
