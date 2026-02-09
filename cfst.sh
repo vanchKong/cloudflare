@@ -347,14 +347,16 @@ run_speed_test() {
 
 # 根据解密出的 json 同步域名到 hosts：删掉指向当前优选 IP 的记录，再依次 add_single_domain（使用当前优选 IP）
 sync_domains_from_json() {
+    local check_cf="${1:-false}"
     [ ! -d "$CF_DIR" ] && mkdir -p "$CF_DIR"
     local current_ip=$(get_current_ip)
     [ -z "$current_ip" ] && echo "❌ 未找到当前优选 IP（请先执行测速或确保 result.csv 存在）" && exit 1
     # 删掉指向到当前优选 ip 的 hosts 行
     sed -i "/^${current_ip} /d" /etc/hosts
-    local domains=($(load_pt_domains true))
+    local domains=($(load_pt_domains "$check_cf"))
     for domain in "${domains[@]}"; do
-        add_single_domain "$domain"
+        # 域名已通过 load_pt_domains true 确认是 CF 托管，跳过重复检查
+        add_single_domain "$domain" skip_cf_check
     done
     echo "✅ 已根据加密文件同步域名到 hosts（当前优选 IP: $current_ip）"
 }
@@ -375,8 +377,10 @@ sync_domains_from_json() {
 # }
 
 # 添加单个域名
+# 参数：$1=域名, $2=可选，skip_cf_check 表示跳过 CF 托管检测（用于已通过 load_pt_domains true 确认的域名）
 add_single_domain() {
     local domain=$1
+    local skip_cf_check="${2:-}"
     local current_ip=$(get_current_ip)
 
     # 检测格式并检查已存在的域名
@@ -384,11 +388,13 @@ add_single_domain() {
         # 获取当前域名在 hosts 中的 IP
         local existing_ip=$(grep " ${domain}$" /etc/hosts | awk '{print $1}')
         
-        # 验证域名是否托管在 Cloudflare
-        local actual_status=$(check_domain_headers "$domain" "unknown")
-        if [ "$actual_status" != "cf" ]; then
-            echo "❌ 域名已存在但非 Cloudflare 托管: $domain"
-            return
+        # 如果未跳过检查，验证域名是否托管在 Cloudflare
+        if [ "$skip_cf_check" != "skip_cf_check" ]; then
+            local actual_status=$(check_domain_headers "$domain" "unknown")
+            if [ "$actual_status" != "cf" ]; then
+                echo "❌ 域名已存在但非 Cloudflare 托管: $domain"
+                return
+            fi
         fi
         
         if [ "$existing_ip" != "$current_ip" ]; then
@@ -398,6 +404,13 @@ add_single_domain() {
         else
             echo "ℹ️ 域名已存在且 IP 已是最优: $domain"
         fi
+        return
+    fi
+
+    # 如果跳过检查，直接添加
+    if [ "$skip_cf_check" = "skip_cf_check" ]; then
+        echo "${current_ip} ${domain}" >> /etc/hosts
+        echo "➕ 添加域名: $domain" >&2
         return
     fi
 
@@ -415,7 +428,7 @@ add_single_domain() {
     # 2. 判断逻辑
     if [ "$is_cf_preset" = "true" ] || [ "$is_cf_preset" = "false" ]; then
         # 有预设，直接用预设
-        actual_status=$(check_domain_headers "$domain" "$is_cf_preset")
+        local actual_status=$(check_domain_headers "$domain" "$is_cf_preset")
         if [ "$actual_status" = "cf" ] || { [ "$actual_status" = "unknown" ] && [ "$is_cf_preset" = "true" ]; }; then
             echo "$current_ip $domain" >> /etc/hosts
             echo "➕ 添加域名(预设): $domain" >&2
@@ -425,7 +438,7 @@ add_single_domain() {
     else
         echo "$domain 预设 $is_cf_preset" >&2
         # 没有预设，按未知逻辑
-        actual_status=$(check_domain_headers "$domain" "unknown")
+        local actual_status=$(check_domain_headers "$domain" "unknown")
         if [ "$actual_status" = "cf" ]; then
             echo "$current_ip $domain" >> /etc/hosts
             echo "➕ 添加域名(CF): $domain" >&2
@@ -584,7 +597,11 @@ main() {
             run_update
             ;;
         3)
-            echo "🔄 不测速，仅按加密文件同步域名到 hosts（使用当前优选 IP）..."
+            echo "🔄 不测速，仅按加密文件同步域名到 hosts（但是会检查是否托管在 CF 下）"
+            sync_domains_from_json true
+            ;;
+        4)
+            echo "🔄 不测速，仅按加密文件同步域名到 hosts（但是不会检查是否托管在 CF 下）"
             sync_domains_from_json
             ;;
         *)
