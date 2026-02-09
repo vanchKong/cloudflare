@@ -316,31 +316,47 @@ load_pt_domains() {
     fi
 }
 
-# 初始化环境
-init_setup() {
-    
+# 仅执行测速，不修改 hosts（result.csv 由 CloudflareST 默认生成）
+run_speed_test() {
     [ ! -d "$CF_DIR" ] && mkdir -p "$CF_DIR"
-    
-    # 获取当前优选 IP
-    current_ip=$(get_current_ip)
-    
-    # 加载并获取有效的域名列表
-    domains=($(load_pt_domains true))
-    
-    # 删掉指向到当前优选 ip 的记录
+    if [ ! -f "$CF_BIN" ]; then
+        local arch=$(setup_arch)
+        [ "$arch" = "unsupported" ] && echo "不支持的架构" && exit 1
+        local filename="CloudflareST_linux_${arch}.tar.gz"
+        local mirrors=(
+            "https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://hk.gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://cdn.gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://edgeone.gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://ghfast.top/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+            "https://ghproxy.net/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
+        )
+        for url in "${mirrors[@]}"; do
+            if wget --tries=2 --waitretry=1 --show-progress --timeout=20 -O "${CF_DIR}/$filename" "$url"; then
+                tar -zxf "${CF_DIR}/$filename" -C "$CF_DIR" && chmod +x "$CF_BIN"
+                rm -f "${CF_DIR}/$filename"
+                break
+            fi
+        done
+        [ ! -f "$CF_BIN" ] && echo "❌ CloudflareST 下载失败" && exit 1
+    fi
+    echo "⏳ 开始优选测试..."
+    (cd "$CF_DIR" && ./CloudflareST -dn 4 -tl 400 -sl 1)
+}
+
+# 根据解密出的 json 同步域名到 hosts：删掉指向当前优选 IP 的记录，再依次 add_single_domain（使用当前优选 IP）
+sync_domains_from_json() {
+    [ ! -d "$CF_DIR" ] && mkdir -p "$CF_DIR"
+    local current_ip=$(get_current_ip)
+    [ -z "$current_ip" ] && echo "❌ 未找到当前优选 IP（请先执行测速或确保 result.csv 存在）" && exit 1
+    # 删掉指向到当前优选 ip 的 hosts 行
     sed -i "/^${current_ip} /d" /etc/hosts
-    # 原逻辑：删除加密文件中存在的域名的优选记录
-    # for domain in "${domains[@]}"; do
-    #     sed -i "/ ${domain}$/d" /etc/hosts
-    # done
-    
-    # 重新添加加密文件中的域名记录
+    local domains=($(load_pt_domains true))
     for domain in "${domains[@]}"; do
-        echo "${current_ip} ${domain}" >> /etc/hosts
+        add_single_domain "$domain"
     done
-    
-    echo "✅ 已初始化 hosts 文件"
-    
+    echo "✅ 已根据加密文件同步域名到 hosts（当前优选 IP: $current_ip）"
 }
 
 # 域名有效性检测
@@ -450,54 +466,15 @@ list_domains() {
     fi
 }
 
-# 执行优选并更新所有域名
+# 执行测速，将 hosts 中「指向旧优选 IP」的行的 IP 更新为新的优选 IP（不增删域名）
 run_update() {
-    # 下载 CloudflareST
-    if [ ! -f "$CF_BIN" ]; then
-        arch=$(setup_arch)
-        [ "$arch" = "unsupported" ] && echo "不支持的架构" && exit 1
-        
-        filename="CloudflareST_linux_${arch}.tar.gz"
-        mirrors=(
-            "https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://hk.gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://cdn.gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://edgeone.gh-proxy.com/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://ghfast.top/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-            "https://ghproxy.net/https://github.com/XIU2/CloudflareSpeedTest/releases/download/v2.2.5/$filename"
-        )
-
-        for url in "${mirrors[@]}"; do
-            if wget --tries=2 --waitretry=1 --show-progress --timeout=20 -O "${CF_DIR}/$filename" "$url"; then
-                tar -zxf "${CF_DIR}/$filename" -C "$CF_DIR" && chmod +x "$CF_BIN"
-                rm "${CF_DIR}/$filename"
-                break
-            fi
-        done
-        
-        if [ ! -f "$CF_BIN" ]; then
-            echo "❌ CloudflareST 下载失败" && exit 1
-        fi
-    fi
-
-    # 获取当前优选 IP
-    local current_ip=$(get_current_ip)
-    [ -z "$current_ip" ] && echo "❌ 未找到当前优选 IP" && exit 1
-    
-    echo "⏳ 开始优选测试..."
-    cd "$CF_DIR" && ./CloudflareST -dn 4 -tl 400 -sl 1
-    
-    # 获取新的优选 IP
-    local best_ip=$(get_current_ip)
-    [ -z "$best_ip" ] && echo "❌ 优选失败" && exit 1
-    
-    echo "🔄 正在更新 hosts 文件..."
-    
-    # 更新所有当前优选 IP 的记录到新的优选 IP
-    sed -i "s/^${current_ip} /${best_ip} /" /etc/hosts
-    
-    echo "✅ 所有域名已更新到最新IP: $best_ip"
+    local old_ip=$(get_current_ip)
+    run_speed_test
+    local new_ip=$(get_current_ip)
+    [ -z "$new_ip" ] && echo "❌ 优选失败" && exit 1
+    echo "🔄 正在更新 hosts 文件（$old_ip → $new_ip）..."
+    sed -i "s/^${old_ip} /${new_ip} /" /etc/hosts
+    echo "✅ 所有指向原优选 IP 的域名已更新到最新 IP: $new_ip"
 }
 
 # 删除所有优选记录
@@ -570,11 +547,11 @@ main() {
             list_domains
             ;;
         "-sync")
-            # 仅通过加密文件更新域名，IP 指向当前优选 IP，不重新测速
+            # 仅通过加密文件更新域名，IP 指向当前优选 IP，不测速
             download_config
             check_config
             check_dependencies
-            init_setup
+            sync_domains_from_json
             ;;
         *)
     # 尝试下载并更新配置文件
@@ -598,17 +575,17 @@ main() {
     
     case "$choice" in
         1)
-            echo "🔄 执行完整更新流程..."
-            init_setup
-            run_update
+            echo "🔄 测速 → 清空当前优选 IP 的 hosts 行 → 按加密文件依次 add_single_domain..."
+            run_speed_test
+            sync_domains_from_json
             ;;
         2)
-            echo "🔄 仅执行测速更新..."
+            echo "🔄 测速 → 将 hosts 中旧优选 IP 覆盖为新优选 IP..."
             run_update
             ;;
         3)
-            echo "🔄 仅同步加密文件中的域名到 hosts（当前优选 IP）..."
-            init_setup
+            echo "🔄 不测速，仅按加密文件同步域名到 hosts（使用当前优选 IP）..."
+            sync_domains_from_json
             ;;
         *)
             echo "❌ 无效的选项，请重新运行脚本"
