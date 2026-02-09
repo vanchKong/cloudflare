@@ -327,10 +327,12 @@ init_setup() {
     # 加载并获取有效的域名列表
     domains=($(load_pt_domains true))
     
-    # 删除加密文件中存在的域名的优选记录
-    for domain in "${domains[@]}"; do
-        sed -i "/ ${domain}$/d" /etc/hosts
-    done
+    # 删掉指向到当前优选 ip 的记录
+    sed -i "/^${current_ip} /d" /etc/hosts
+    # 原逻辑：删除加密文件中存在的域名的优选记录
+    # for domain in "${domains[@]}"; do
+    #     sed -i "/ ${domain}$/d" /etc/hosts
+    # done
     
     # 重新添加加密文件中的域名记录
     for domain in "${domains[@]}"; do
