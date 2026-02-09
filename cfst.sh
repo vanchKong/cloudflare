@@ -582,7 +582,7 @@ main() {
     # 添加用户选择功能
     echo "请选择操作模式："
     echo "1. 重新载入并测速获取优选 IP（首次运行时请选择此项）"
-    echo "2. 不重新载入域名，仅重新测速获取优选 IP"
+    echo "2. 不重新载入域名，仅重新测速获取新的优选 IP，覆盖为新优选 IP，不检查是否托管在 CF 下"
     echo "3. 仅通过加密文件更新域名（使用当前优选 IP，不测速，但是会检查是否托管在 CF 下）"
     echo "4. 仅通过加密文件更新域名（使用当前优选 IP，不测速，但是不会检查是否托管在 CF 下）"
     read -p "请输入选项 [1/2/3/4]: " choice
@@ -591,7 +591,7 @@ main() {
         1)
             echo "🔄 测速 → 清空当前优选 IP 的 hosts 行 → 按加密文件依次 add_single_domain..."
             run_speed_test
-            sync_domains_from_json
+            sync_domains_from_json true
             ;;
         2)
             echo "🔄 测速 → 将 hosts 中旧优选 IP 覆盖为新优选 IP..."
