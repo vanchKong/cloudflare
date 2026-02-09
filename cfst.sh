@@ -567,6 +567,13 @@ main() {
         "-list")
             list_domains
             ;;
+        "-sync")
+            # 仅通过加密文件更新域名，IP 指向当前优选 IP，不重新测速
+            download_config
+            check_config
+            check_dependencies
+            init_setup
+            ;;
         *)
     # 尝试下载并更新配置文件
     download_config
@@ -583,8 +590,9 @@ main() {
     # 添加用户选择功能
     echo "请选择操作模式："
     echo "1. 重新载入并测速获取优选 IP（首次运行时请选择此项）"
-    echo "2. 不重新载入，仅测速获取优选 IP"
-    read -p "请输入选项 [1/2]: " choice
+    echo "2. 不重新载入域名，仅重新测速获取优选 IP"
+    echo "3. 仅通过加密文件更新域名（使用当前优选 IP，不测速）"
+    read -p "请输入选项 [1/2/3]: " choice
     
     case "$choice" in
         1)
@@ -595,6 +603,10 @@ main() {
         2)
             echo "🔄 仅执行测速更新..."
             run_update
+            ;;
+        3)
+            echo "🔄 仅同步加密文件中的域名到 hosts（当前优选 IP）..."
+            init_setup
             ;;
         *)
             echo "❌ 无效的选项，请重新运行脚本"
